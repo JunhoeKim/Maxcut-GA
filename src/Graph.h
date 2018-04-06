@@ -9,10 +9,11 @@ class Graph {
 
   public:
     Graph(int vCount, int eCount);
-    int getVCount();
-    int getECount();
+    ~Graph();
+    int getVCount() const;
+    int getECount() const;
     void addEdge(int first, int second, int weight);
     void printGraph();
-    int** getMatrix();
+    int** getMatrix() const;
 };
 #endif
