@@ -18,7 +18,7 @@ typedef shared_ptr<pair<INDEX, WEIGHT>> WeightPair;
 
 class GeneticSpace {
 public:
-	GeneticSpace(size_t size, shared_ptr<Graph> graph);
+	GeneticSpace(size_t size, Graph* graph);
 	void printElems();
 	void updateScore();
 	Chromosome crossover(const INDEX first, const INDEX second);
@@ -27,7 +27,7 @@ public:
 
 private:
 	size_t size;
-	shared_ptr<Graph> graph;
+	Graph* graph;
 	vector<Chromosome> chromosomes;
 	list<WeightPair> weights;
 };

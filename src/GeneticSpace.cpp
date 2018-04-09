@@ -7,7 +7,7 @@ bool WeightPairComparator(const WeightPair& a, const WeightPair& b) {
 	return a->second > b->second;
 };
 
-GeneticSpace::GeneticSpace(size_t size, shared_ptr<Graph> graph) : size(size), graph(graph) {
+GeneticSpace::GeneticSpace(size_t size, Graph* graph) : size(size), graph(graph) {
 	int vCount = graph->getVCount();
 	for (size_t i = 0; i < size; i++) {
 		Chromosome elem(vCount);
@@ -62,7 +62,10 @@ void GeneticSpace::updateScore() {
 
 pair<INDEX, INDEX> GeneticSpace::select() {
 	float* scores = new float[size];
+
 	float min_p = 0.1f;
+
+
 	float max_p = 1.0f;
 	float totalScore = 0;
 	for (size_t i = 0; i < size; i++) {
@@ -78,6 +81,7 @@ pair<INDEX, INDEX> GeneticSpace::select() {
 
 Chromosome GeneticSpace::crossover(const INDEX first, const INDEX second) {
 	int vCount = graph->getVCount();
+
 	int cutPoint = rand() % vCount;
 	Chromosome firstElem = chromosomes[first];
 	Chromosome secondElem = chromosomes[second];;

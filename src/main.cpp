@@ -19,29 +19,32 @@ int main() {
 	Report the best solution;
 	*/
 
-	int vCount, eCount = 0;
-	int first, second, weight = 0;
-
-	ifstream ifile("../unweighted_50.txt", ifstream::in);
+	int vCount = 0, eCount = 0;
+	int first = 0, second = 0, weight = 0;
+	
+	ifstream ifile("unweighted_50.txt", ifstream::in);
 	ifile >> vCount >> eCount;
 	cout << "|V| : " << vCount << " |E| : " << eCount << endl;
-	auto graph = make_shared<Graph>(vCount, eCount);
+	//auto graph = make_shared<Graph>(vCount, eCount);
+	Graph graph(vCount, eCount);
 
 	while (ifile >> first >> second >> weight) {
-		graph->addEdge(first, second, weight);
+		graph.addEdge(first, second, weight);
 	}
 
-	GeneticSpace chromosomes(100u, graph);
-	int K = 20;
+	GeneticSpace chromosomes(100u, &graph);
+	const size_t K = 20;
+	
 	chromosomes.printElems();
 	chromosomes.updateScore();
 	do {
 		vector<Chromosome> replaceElems;
+
 		for (int i = 0; i < K; i++) {
 			auto selectedPair = chromosomes.select();
 			auto processed = chromosomes.crossover(selectedPair.first, selectedPair.second);
 			processed.mutate(Utils::ITER, 100);
-			replaceElems.emplace_back(processed);
+			replaceElems.push_back(processed);
 		}
 		cout << "replace elems size : " << replaceElems.size() << endl;
 		chromosomes.replace(replaceElems);
