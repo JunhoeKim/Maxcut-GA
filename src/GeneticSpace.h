@@ -8,28 +8,29 @@
 #include <list>
 #include <memory>
 #include <functional>
+#include <set>
+#include <algorithm>
 #include "Graph.h"
 #include "Chromosome.h"
+#include "Config.h"
 
 using namespace std;
-typedef int INDEX;
-typedef int WEIGHT;
-typedef shared_ptr<pair<INDEX, WEIGHT>> WeightPair;
-
 class GeneticSpace {
 public:
 	GeneticSpace(size_t size, Graph* graph);
 	void printElems();
-	void updateScore();
-	Chromosome crossover(const INDEX first, const INDEX second);
-	void replace(vector<Chromosome>& newChromosomes);
-	pair<INDEX, INDEX> select();
-
+	void updateWeights(vector<int>& replaceIndices);
+	void initWeights();
+	Chromosome crossover(shared_ptr<Chromosome> first, shared_ptr<Chromosome> second, CrossoverOption option);
+	pair<shared_ptr<Chromosome>, shared_ptr<Chromosome>> select(SelectOption option);
+	vector<int> replace(vector<Chromosome>& newChromosomes, size_t generation, size_t maxGeneration, ReplaceOption* replaceOption);
+	vector<shared_ptr<Chromosome>> chromosomes;
 private:
-	size_t size;
+	size_t population;
 	Graph* graph;
-	vector<Chromosome> chromosomes;
-	list<WeightPair> weights;
+	pair<shared_ptr<Chromosome>, shared_ptr<Chromosome>> selectByRank();
+	pair<shared_ptr<Chromosome>, shared_ptr<Chromosome>> selectByTournament(float, int);
+	Chromosome crossoverByPoint(shared_ptr<Chromosome> first, shared_ptr<Chromosome> second, const size_t pointNum);
 };
 
 #endif

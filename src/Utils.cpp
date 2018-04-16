@@ -1,22 +1,16 @@
 #include "GeneticSpace.h"
 #include "Utils.h"
-
-int Utils::ITER = 0;
-
-Chromosome Utils::mutate(Chromosome elem) {
-	return elem;
-}
-
-bool Utils::isStopCondition() {
-	return ITER++ > 100 ? true : false;
+bool Utils::isStopCondition(size_t generation, size_t maxGeneration) {
+	return generation > maxGeneration;
 }
 
 int Utils::selectIndex(float* scores, float totalScore) {
 	float currValue = (float)rand() / RAND_MAX * totalScore;
+	size_t scoresLength = sizeof(scores) / sizeof(*scores);
 	int index = -1;
 	do {
 		currValue -= scores[++index];
-	} while (currValue > 0);
-	//cout << "select index : " << index << " score : " << scores[index] << endl;
+		scoresLength--;
+	} while (currValue > 1e-6 && scoresLength > 0);
 	return index;
 }

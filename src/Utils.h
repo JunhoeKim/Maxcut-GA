@@ -5,9 +5,7 @@
 
 class Utils {
   public:
-    static Chromosome mutate(Chromosome elem);
-    static bool isStopCondition();
-    static int ITER;
+    static bool isStopCondition(size_t generation, size_t maxGeneration);
 	static int selectIndex(float*, float);
 };
 #endif

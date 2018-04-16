@@ -1,7 +1,7 @@
 CC = g++
 TARGET = main_exe
 CFLAGS = -W -Wall -g
-OBJECTS = main.o Chromosomes.o Graph.o Utils.o
+OBJECTS = main.o GeneticSpace.o Graph.o Utils.o Config.o Chromosome.o
 
 all : $(TARGET)
 
