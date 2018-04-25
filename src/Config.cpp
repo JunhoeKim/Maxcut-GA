@@ -4,12 +4,13 @@
 const string replaceTypeStrings[] =
 {
 	stringify(Genitor),
-	stringify(Huristic)
+	stringify(ReplaceRandom)
 };
 
 const string selectTypeStrings[] = {
 	stringify(Rank),
-	stringify(Tournament)
+	stringify(Tournament),
+	stringify(SelectType::SelectRandom)
 };
 
 Config::Config(SelectOption* _selectOption,
@@ -43,7 +44,7 @@ ReplaceOption::ReplaceOption(ReplaceType type) : replaceType(type) {
 
 }
 
-MutateOption::MutateOption(float ratio) : mutationRatio(ratio) {
+MutateOption::MutateOption(MutateType type, float ratio) : mutateType(type), mutationRatio(ratio) {
 
 }
 

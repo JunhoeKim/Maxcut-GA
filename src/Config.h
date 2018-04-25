@@ -5,10 +5,14 @@
 #include <iostream>
 using namespace std;
 enum SelectType {
-	Rank, Tournament
+	Rank, Tournament, SelectRandom
 };
 enum ReplaceType {
-	Genitor, Huristic
+	Genitor, ReplaceRandom
+};
+
+enum MutateType {
+	Uniform, IntervalSwap, Typical
 };
 class SelectOption {
 public:
@@ -31,7 +35,8 @@ public:
 
 class MutateOption {
 public:
-	MutateOption(float);
+	MutateOption(MutateType, float);
+	MutateType mutateType;
 	float mutationRatio;
 };
 

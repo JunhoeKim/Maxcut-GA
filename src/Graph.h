@@ -19,7 +19,5 @@ class Graph {
     size_t getECount() const;
     void addEdge(int first, int second, int weight);
 	vector<Edge> eArray;
-	int x = 0;
-	int y = 0;
 };
 #endif

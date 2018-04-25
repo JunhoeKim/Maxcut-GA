@@ -1,12 +1,12 @@
-CC = g++
+CXX = g++
 TARGET = main_exe
-CFLAGS = -W -Wall -g
-OBJECTS = main.o GeneticSpace.o Graph.o Utils.o Config.o Chromosome.o
+CXXFLAGS = -W -Wall -g -std=c++11 -O3
+OBJECTS = main.o Chromosome.o Graph.o Utils.o Config.o GeneticSpace.o
 
 all : $(TARGET)
 
 $(TARGET): $(OBJECTS)
-	$(CC) $(CFLAGS) -o $@ $^
+	$(CXX) $(CXXFLAGS) -o $@ $^
 
 clean :
 	rm *.o $(TARGET)

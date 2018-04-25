@@ -4,7 +4,6 @@
 #include "Config.h"
 #include <cmath>
 using namespace std;
-using pChromosome = shared_ptr<Chromosome>;
 
 //bool WeightPairComparator(const WeightPair& a, const WeightPair& b) {
 //	return a->second > b->second;
@@ -21,7 +20,7 @@ bool fitnessComparator(shared_ptr<Chromosome>& a, shared_ptr<Chromosome>& b) {
 GeneticSpace::GeneticSpace(size_t _population, Graph* graph) : population(_population), graph(graph) {
 	int vCount = graph->getVCount();
 	for (size_t i = 0; i < population; i++) {
-		Chromosome* elem = new Chromosome();
+		pChromosome elem = make_shared<Chromosome>(Chromosome());
 		for (int j = 0; j < vCount; j++) {
 			int value = rand() % 2;
 			elem->genes.emplace_back(value);
@@ -29,6 +28,31 @@ GeneticSpace::GeneticSpace(size_t _population, Graph* graph) : population(_popul
 		chromosomes.emplace_back(elem);
 	}
 
+}
+
+void GeneticSpace::reInitChromosomes() {
+	int vCount = graph->getVCount();
+	pChromosome bestElem = chromosomes[0];
+	chromosomes.clear();
+	chromosomes.reserve(population);
+	chromosomes.emplace_back(bestElem);
+	for (size_t i = 1; i < population; i++) {
+		pChromosome elem = make_shared<Chromosome>(Chromosome());
+		for (int j = 0; j < vCount; j++) {
+			int value = rand() % 2;
+			elem->genes.emplace_back(value);
+		}
+		chromosomes.emplace_back(elem);
+	}
+	initFitnesses();
+}
+
+float GeneticSpace::getAvg() {
+	float result = 0;
+	for (auto chromosome : chromosomes) {
+		result += chromosome->fitness;
+	}
+	return result / chromosomes.size();
 }
 
 void GeneticSpace::printElems() {
@@ -46,14 +70,12 @@ void GeneticSpace::printElems() {
 	cout << "Fitnesses --------" << endl;
 	sort(chromosomes.begin(), chromosomes.end(), fitnessComparator);
 
-	size_t index = 0;
 	for (size_t i = 0; i < chromosomes.size(); i++) {
 		cout << chromosomes[i]->fitness << endl;
 	}
 }
 
-void GeneticSpace::initWeights() {
-	int vCount = graph->getVCount();
+void GeneticSpace::initFitnesses() {
 	for (size_t i = 0; i < population; i++) {
 		vector<int> currGenes = chromosomes[i]->genes;
 		int currFitness = 0;
@@ -67,28 +89,21 @@ void GeneticSpace::initWeights() {
 	sort(chromosomes.begin(), chromosomes.end(), fitnessComparator);
 }
 
-void GeneticSpace::updateWeights(vector<int>& replaceIndices) {
-	int vCount = graph->getVCount();
-	//for (auto index : replaceIndices) {
-	//	vector<int>& currGenes = chromosomes[index]->genes;
-	//	int currFitness = 0;
-	//	for (const Edge& edge : graph->eArray) {
-	//		if (currGenes[get<0>(edge)] != currGenes[get<1>(edge)]) {
-	//			currFitness += get<2>(edge);
-	//		}
-	//	}
-	//	chromosomes[index]->fitness = currFitness;
-	//	graph->y++;
-	//}
+void GeneticSpace::alignPopulations() {
 	sort(chromosomes.begin(), chromosomes.end(), fitnessComparator);
 }
 
 
 pair<shared_ptr<Chromosome>, shared_ptr<Chromosome>> GeneticSpace::select(SelectOption option) {
-	if (option.selectType == SelectType::Rank) {
-		return selectByRank();
-	} else {
+	switch (option.selectType) {
+	case SelectRandom:
+		return selectByRandom();
+	case Tournament:
 		return selectByTournament(0.7f, option.tournamentSize);
+	case Rank:
+		return selectByRank();
+	default:
+		return selectByRandom();
 	}
 }
 
@@ -105,7 +120,7 @@ pair<shared_ptr<Chromosome>, shared_ptr<Chromosome>> GeneticSpace::selectByRank(
 	int firstIndex = Utils::selectIndex(scores, totalScore);
 	int secondIndex = Utils::selectIndex(scores, totalScore);
 	delete[] scores;
-	return make_pair(chromosomes[0], chromosomes[1]);
+	return make_pair(chromosomes[firstIndex], chromosomes[secondIndex]);
 }
 
 pair<shared_ptr<Chromosome>, shared_ptr<Chromosome>> GeneticSpace::selectByTournament(float cond, int K) {
@@ -120,7 +135,6 @@ pair<shared_ptr<Chromosome>, shared_ptr<Chromosome>> GeneticSpace::selectByTourn
 	size_t candIndex = 0;
 	for (auto it = candidateSet.cbegin(); it != candidateSet.cend(); ++it) {
 		candidates[candIndex++] = (*it);
-		//cout << "fitness " << candIndex << " value : " << (*it)->fitness << endl;
 	}
 
 	while (candSize > 2) {
@@ -134,13 +148,6 @@ pair<shared_ptr<Chromosome>, shared_ptr<Chromosome>> GeneticSpace::selectByTourn
 			} else {
 				candidates[i] = first->fitness > second->fitness ? second : first;
 			}
-			
-			//if (cond > randValue) {
-			//	candidates[i] = first;
-			//}
-			//else {
-			//	candidates[i] = second;
-			//}
 
 		}
 		candSize /= 2;
@@ -149,6 +156,10 @@ pair<shared_ptr<Chromosome>, shared_ptr<Chromosome>> GeneticSpace::selectByTourn
 	pChromosome second = candidates[1];
 	delete[] candidates;
 	return make_pair(first, second);
+}
+
+pair<pChromosome, pChromosome> GeneticSpace::selectByRandom() {
+	return make_pair(chromosomes[rand() % population], chromosomes[rand() % population]);
 }
 
 Chromosome GeneticSpace::crossover(shared_ptr<Chromosome> first, shared_ptr<Chromosome> second, CrossoverOption option) {
@@ -166,7 +177,7 @@ Chromosome GeneticSpace::crossoverByPoint(shared_ptr<Chromosome> first, shared_p
 	Chromosome crossovered((size_t)vCount);
 	size_t cutIndex = 0;
 	bool isFirst = true;
-	for (size_t i = 0; i < vCount; i++) {
+	for (int i = 0; i < vCount; i++) {
 		crossovered.genes.emplace_back((isFirst ? first : second)->genes[i]);
 		if (cutIndex < pointNum && i == cutPoints[cutIndex]) {
 			cutIndex++;
@@ -184,34 +195,32 @@ Chromosome GeneticSpace::crossoverByPoint(shared_ptr<Chromosome> first, shared_p
 	return crossovered;
 }
 
-vector<int> GeneticSpace::replace(vector<Chromosome>& newChromosomes, 
+void GeneticSpace::replace(vector<Chromosome>& newChromosomes, 
 	size_t generation, size_t maxGeneration,
 	ReplaceOption* replaceOption) {
 
-	if (replaceOption->replaceType == Huristic) {
+	if (replaceOption->replaceType == ReplaceRandom) {
 		vector<int> replaceIndices;
 		replaceIndices.reserve(newChromosomes.size());
 		float progressFactor = 0.2f * generation / maxGeneration * population;
 		int randomizeFactor = (int)(population * 0.5f - progressFactor);
 		for (size_t i = 0; i < newChromosomes.size(); i++) {
 			size_t randValue = rand() % randomizeFactor;
-			int replaceIndex = min(population -1, (size_t)(0.5f * population + progressFactor + randValue));
+			int replaceIndex = min(population - 1, (size_t)(0.5f * population + progressFactor + randValue));
 			replaceIndices.emplace_back(replaceIndex);
 		}
 		size_t newIndex = 0;
 		for (auto index : replaceIndices) {
 			*chromosomes[index] = newChromosomes[newIndex++];
 		}
-		return replaceIndices;
+	} else if (replaceOption->replaceType == Genitor) {
+		vector<int> replaceIndices;
+		auto it = chromosomes.cend();
+		size_t replaceIndex = chromosomes.size() - 1;
+		for (size_t i = 0; i < newChromosomes.size(); i++) {
+			--it;
+			**it = newChromosomes[i];
+			replaceIndices.emplace_back(--replaceIndex);
+		}
 	}
-
-	vector<int> replaceIndices;
-	auto it = chromosomes.cend();
-	size_t replaceIndex = chromosomes.size() - 1;
-	for (size_t i = 0; i < newChromosomes.size(); i++) {
-		--it;
-		**it = newChromosomes[i];
-		replaceIndices.emplace_back(--replaceIndex);
-	}
-	return replaceIndices;
 }
