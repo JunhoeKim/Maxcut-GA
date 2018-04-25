@@ -1,18 +1,23 @@
 #ifndef GRAPH_H_
 #define GRAPH_H_
 #include <iostream>
+#include <tuple>
+#include <vector>
+typedef int INDEX;
+typedef int WEIGHT;
+using namespace std;
+typedef tuple<INDEX, INDEX, WEIGHT> Edge;
 class Graph {
   private:
-    int vCount;
-    int eCount;
-    int** vArray;
+    size_t vCount;
+    size_t eCount;
 
   public:
-    Graph(int vCount, int eCount);
-    int getVCount();
-    int getECount();
+    Graph(size_t vCount, size_t eCount);
+    ~Graph();
+    size_t getVCount() const;
+    size_t getECount() const;
     void addEdge(int first, int second, int weight);
-    void printGraph();
-    int** getMatrix();
+	vector<Edge> eArray;
 };
 #endif

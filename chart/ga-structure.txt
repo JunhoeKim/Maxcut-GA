@@ -1,0 +1,19 @@
+
+procedure process (config) {
+    Generate initial solutions (number of population)
+    Check start time
+        do {
+            for (i = 0; i < K; i++) {
+                Select
+                Crossover
+                Mutate
+                Calculate new fitness
+            }
+            Replace
+            Align populations order by fitness
+        } while (Is processing time below 175 seconds?)
+
+    return maxFitness
+}
+
+

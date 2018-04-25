@@ -1,19 +1,16 @@
-#include "Chromosomes.h"
+#include "GeneticSpace.h"
 #include "Utils.h"
-
-int Utils::ITER = 0;
-ELEM Utils::crossover(pair<ELEM, ELEM> selectedPair) {
-  return selectedPair.first;
+bool Utils::isStopCondition(size_t generation, size_t maxGeneration) {
+	return generation > maxGeneration;
 }
 
-ELEM Utils::mutate(ELEM elem) {
-  return elem;
-}
-
-void Utils::replace(vector<ELEM> elems, Chromosomes chromosomes) {
-
-}
-
-bool Utils::isStopCondition() {
-  return ITER++ > 100 ? true : false;
+int Utils::selectIndex(float* scores, float totalScore) {
+	float currValue = (float)rand() / RAND_MAX * totalScore;
+	size_t scoresLength = sizeof(scores) / sizeof(*scores);
+	int index = -1;
+	do {
+		currValue -= scores[++index];
+		scoresLength--;
+	} while (currValue > 1e-6 && scoresLength > 0);
+	return index;
 }
