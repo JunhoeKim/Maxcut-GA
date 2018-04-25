@@ -168,16 +168,16 @@ Chromosome GeneticSpace::crossover(shared_ptr<Chromosome> first, shared_ptr<Chro
 
 Chromosome GeneticSpace::crossoverByPoint(shared_ptr<Chromosome> first, shared_ptr<Chromosome> second, const size_t pointNum) {
 	size_t vCount = graph->getVCount();
-	vector<int> cutPoints;
+	vector<size_t> cutPoints;
 	for (size_t i = 0; i < pointNum; i++) {
-		int cutPoint = rand() % vCount;
+		size_t cutPoint = rand() % vCount;
 		cutPoints.emplace_back(cutPoint);
 	}
 	sort(cutPoints.begin(), cutPoints.end());
 	Chromosome crossovered((size_t)vCount);
 	size_t cutIndex = 0;
 	bool isFirst = true;
-	for (int i = 0; i < vCount; i++) {
+	for (size_t i = 0; i < vCount; i++) {
 		crossovered.genes.emplace_back((isFirst ? first : second)->genes[i]);
 		if (cutIndex < pointNum && i == cutPoints[cutIndex]) {
 			cutIndex++;

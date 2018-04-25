@@ -6,7 +6,7 @@ Chromosome::Chromosome(size_t size) {
 	genes.reserve(size);
 }
 
-void Chromosome::mutate(int generation, int maxGeneration, MutateOption* option, Graph* graph) {
+void Chromosome::mutate(MutateOption* option, Graph* graph) {
 	switch (option->mutateType) {
 	case Uniform:
 		mutateByUniform(option);
@@ -18,13 +18,6 @@ void Chromosome::mutate(int generation, int maxGeneration, MutateOption* option,
 		mutateByTypical(graph);
 		break;
 	}
-	//if (generation / maxGeneration > 0.5f) {
-	//	mutateByUniform(option);
-	//}
-	//else {
-	//	mutateBySwap(graph);
-	//}
-
 	int currFitness = 0;
 	for (Edge& edge : graph->eArray) {
 		if (genes[get<0>(edge)] != genes[get<1>(edge)]) {
@@ -32,6 +25,37 @@ void Chromosome::mutate(int generation, int maxGeneration, MutateOption* option,
 		}
 	}
 	fitness = currFitness;
+
+}
+
+void Chromosome::searchToLocal(Graph* graph) {
+	size_t vCount = graph->getVCount();
+	bool improved = true;
+	while (improved) {
+		improved = false;
+		for (size_t i = 0; i < vCount; i++) {
+			int fitnessDelta = getFitnessDelta(graph, i);
+			if (fitnessDelta > 0) {
+				genes[i] = 1 - genes[i];
+				fitness += fitnessDelta;
+				improved = true;
+			}
+		}
+	}
+}
+
+int Chromosome::getFitnessDelta(Graph* graph, size_t index) {
+	vector<pair<INDEX, WEIGHT>> adjacentList = graph->adjacentLists[index];
+	int fitnessDelta = 0;
+	int currValue = genes[index];
+	for (auto pair: adjacentList) {
+		if (currValue == genes[pair.first]) {
+			fitnessDelta += pair.second;
+		} else {
+			fitnessDelta -= pair.second;
+		}
+	}
+	return fitnessDelta;
 }
 
 void Chromosome::mutateBySwap(Graph* graph) {
@@ -49,11 +73,21 @@ void Chromosome::mutateBySwap(Graph* graph) {
 	}
 
 	for (size_t i = 0; i < swapSize; i++) {
-		genes[(firstIndex + i) % vCount] = second[i];
+		size_t currIndex = (firstIndex + i) % vCount;
+		int currValue = genes[currIndex];
+		int nextValue = second[i];
+		if (currValue != nextValue) {
+			genes[currIndex] = nextValue;
+		}
 	}
 
 	for (size_t i = 0; i < swapSize; i++) {
-		genes[(secondIndex + i) % vCount] = first[i];
+		size_t currIndex = (secondIndex + i) % vCount;
+		int currValue = genes[currIndex];
+		int nextValue = first[i];
+		if (currValue != nextValue) {
+			genes[currIndex] = nextValue;
+		}
 	}
 }
 
@@ -70,7 +104,8 @@ void Chromosome::mutateByTypical(Graph* graph) {
 	size_t mutateCount = graph->getVCount() * 0.04f;
 	for (size_t i = 0; i < mutateCount; i++) {
 		if (rand() / RAND_MAX > 0.7f) {
-			genes[rand() % mutateCount] == 1 ? 0 : 1;
+			size_t currIndex = rand() % mutateCount;
+			genes[currIndex] = genes[currIndex] == 1 ? 0 : 1;
 		}
 	}
 }

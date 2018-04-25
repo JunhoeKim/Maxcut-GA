@@ -3,6 +3,7 @@
 #include <iostream>
 #include <tuple>
 #include <vector>
+#include <utility>
 typedef int INDEX;
 typedef int WEIGHT;
 using namespace std;
@@ -18,6 +19,7 @@ class Graph {
     size_t getVCount() const;
     size_t getECount() const;
     void addEdge(int first, int second, int weight);
-	vector<Edge> eArray;
+	  vector<Edge> eArray;
+    vector<vector<pair<INDEX, WEIGHT> > > adjacentLists;
 };
 #endif
