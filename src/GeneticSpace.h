@@ -27,7 +27,7 @@ public:
 	Chromosome crossover(shared_ptr<Chromosome> first, shared_ptr<Chromosome> second, CrossoverOption option);
 	pair<shared_ptr<Chromosome>, shared_ptr<Chromosome>> select(SelectOption option);
 	void replace(vector<Chromosome>& newChromosomes, size_t generation, size_t maxGeneration, ReplaceOption* replaceOption);
-	vector<shared_ptr<Chromosome>> chromosomes;
+	vector<pChromosome> chromosomes;
 private:
 	size_t population;
 	Graph* graph;

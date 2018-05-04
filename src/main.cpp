@@ -15,6 +15,7 @@ int process(const Config& config);
 float avg(vector<int>& fitnesses);
 int max(vector<int>& fitnesses);
 float stdev(vector<int>& fitnesses);
+
 int main() {
 	srand((unsigned int)time(NULL));
 	//srand(0);
@@ -57,8 +58,8 @@ int main() {
 	config.selectOption = new SelectOption(Tournament, 2);
 	config.crossoverOption = new CrossoverOption(4);
 	config.maxGeneration = 175;
-	config.population = 30;
-	config.inputFilePath = "../proj1_instances/weighted_500.txt";
+	config.population = 100;
+	config.inputFilePath = "../proj1_instances/weighted_chimera_297.txt";
 	config.childrenRatio = 0.1f;
 	process(config);
 
@@ -145,8 +146,7 @@ int process(const Config& config) {
 		auto end = clock();
 		generation = (end - start) / CLOCKS_PER_SEC;
 		debugGeneration = (end - debugStart) / CLOCKS_PER_SEC;
-		if (debugGeneration >= 2) {
-			geneticSpace.reInitChromosomes();
+		if (debugGeneration >= 1) {
 			debugStart = clock();
 			debugGeneration = -1;
 		}
@@ -160,11 +160,9 @@ int process(const Config& config) {
 		//		<< "," << geneticSpace.getAvg() << endl;
 		}
 		iterCount++;
-		/*
-		if (iterCount > 1000 && iterCount % 50000 == 0) {
+		if (Utils::isReInitCondition(geneticSpace.chromosomes)) {
 			geneticSpace.reInitChromosomes();
 		}
-		*/
 	} while (!Utils::isStopCondition(generation, config.maxGeneration));
 	cout << "iter Count : " << iterCount << endl;
 	//ofile << config << endl << "max fitness : " << geneticSpace.chromosomes[0]->fitness << endl << endl;

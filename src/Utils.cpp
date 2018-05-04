@@ -14,3 +14,13 @@ int Utils::selectIndex(float* scores, float totalScore) {
 	} while (currValue > 1e-6 && scoresLength > 0);
 	return index;
 }
+
+bool Utils::isReInitCondition(vector<pChromosome>& chromosomes) {
+	int fitness = chromosomes[0]->fitness;
+	for (size_t i = 0; i < chromosomes.size() / 2; i++) {
+		if (fitness != chromosomes[i]->fitness) {
+			return false;
+		}
+	}
+	return true;
+}
