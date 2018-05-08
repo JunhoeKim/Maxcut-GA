@@ -2,12 +2,14 @@
 #define UTILS_H_
 
 #include "GeneticSpace.h"
+#include "Chromosome.h"
+using namespace std;
 using pChromosome = shared_ptr<Chromosome>;
 
 class Utils {
   public:
-    static bool isStopCondition(size_t generation, size_t maxGeneration);
-	static bool isReInitCondition(vector<pChromosome>& chromosomes);
+  static bool isStopCondition(size_t generation, size_t maxGeneration);
 	static int selectIndex(float*, float);
+  static float getRandZeroToOne();
 };
 #endif

@@ -13,7 +13,8 @@ using namespace std;
 class Chromosome {
 public:
 	Chromosome();
-	Chromosome(size_t size);
+	Chromosome(size_t vCount);
+	Chromosome(size_t vCount, bool doNormal, float geneRatio);
 	vector<int> genes;
 	void mutate(MutateOption* option, Graph* graph);
 	void searchToLocal(Graph*);

@@ -1,9 +1,24 @@
 #include "Chromosome.h"
+#include "Utils.h"
 Chromosome::Chromosome() {
 }
 
-Chromosome::Chromosome(size_t size) {
-	genes.reserve(size);
+Chromosome::Chromosome(size_t vCount) {
+	genes.reserve(vCount);
+}
+
+Chromosome::Chromosome(size_t vCount, bool doNormal, float geneRatio) {
+	genes.reserve(vCount);
+	for (size_t i = 0; i < vCount; i++) {
+		int value = Utils::getRandZeroToOne() > geneRatio ? 0 : 1;
+		genes.emplace_back(value);
+	}
+
+	if (doNormal && genes[0] == 1) {
+		for (size_t i = 0; i < vCount; i++) {
+			genes[i] = 1 - genes[i];
+		}
+	}
 }
 
 void Chromosome::mutate(MutateOption* option, Graph* graph) {
@@ -93,7 +108,7 @@ void Chromosome::mutateBySwap(Graph* graph) {
 
 void Chromosome::mutateByUniform(MutateOption* option) {
 	for (size_t i = 0; i < genes.size(); i++) {
-		float mutateRatio = (float)(rand() / RAND_MAX);
+		float mutateRatio = Utils::getRandZeroToOne();
 		if (mutateRatio < option->mutationRatio) {
 			genes[i] = genes[i] == 1 ? 0 : 1;
 		}

@@ -23,13 +23,13 @@ int main() {
 	vector<size_t> pointCounts = { 2, 4, 8 };
 	size_t maxGeneration = 60;
 	vector<size_t> populations = { 300, 700, 1000};
-	vector<string> paths = { "unweighted_50.txt", "unweighted_100.txt", "unweighted_500.txt", "weighted_500.txt", "weighted_chimera_297.txt"};
+	vector<string> paths = { "chimera_946.txt", "cubic_1000.txt", "planar_800.txt", "random_1000.txt", "toroidal_800.txt"};
 	vector<float> childrenRatios = { 0.03f, 0.05f, 0.07f };
 	vector<ReplaceType> replaceTypes = { Genitor, ReplaceRandom };
 	Config config;
 	SelectOption* selectOption = new SelectOption(Tournament, tournamentCounts[0]);
 	ReplaceOption* replaceOption = new ReplaceOption(Genitor);
-	MutateOption* mutateOption = new MutateOption(IntervalSwap, 0.01f);
+	MutateOption* mutateOption = new MutateOption(Uniform, 0.01f);
 	config.selectOption = selectOption;
 	config.replaceOption = replaceOption;
 	config.maxGeneration = maxGeneration;
@@ -56,12 +56,16 @@ int main() {
 	//}
 
 	config.selectOption = new SelectOption(Tournament, 2);
-	config.crossoverOption = new CrossoverOption(4);
+	config.crossoverOption = new CrossoverOption(3);
 	config.maxGeneration = 175;
-	config.population = 100;
-	config.inputFilePath = "../proj1_instances/weighted_chimera_297.txt";
-	config.childrenRatio = 0.1f;
-	process(config);
+	config.population = 300;
+	config.inputFilePath = "../proj2_instances/cubic_1000.txt";
+	config.childrenRatio = 0.05f;
+	//process(config);
+	for (auto filePath: paths) {
+		config.inputFilePath = "../proj2_instances/" + filePath;
+		process(config);
+	}
 
 	//ofstream ofile("result.csv", fstream::out | fstream::app);
 	//ofile << "Instance,Maximum,Average,Standard Deviation" << endl;
@@ -113,19 +117,19 @@ int process(const Config& config) {
 	int first = 0, second = 0, weight = 0;
 
 	ifstream ifile(config.inputFilePath, ifstream::in);
-	ofstream ofile("maxcut.out", fstream::out);
+	ofstream ofile("debug.out", fstream::out | fstream::app);
 	ifile >> vCount >> eCount;
 	Graph graph(vCount, eCount);
+	size_t population = 1000000 / eCount;
 
 	while (ifile >> first >> second >> weight) {
 		graph.addEdge(first, second, weight);
 	}
 
-	GeneticSpace geneticSpace(config.population, &graph);
+	GeneticSpace geneticSpace(population, &graph);
 	size_t generation = 0;
 	auto debugStart = clock();
 	int debugGeneration = 0;
-	geneticSpace.initFitnesses();
 	cout << " max: " << geneticSpace.chromosomes[0]->fitness << " mean: " << geneticSpace.getAvg() << endl;
 	//ofile << "Generation,Maximum Fitness,Minimum Fitness,Average" << endl;
 	//ofile << "0," << geneticSpace.chromosomes[0]->fitness 
@@ -134,7 +138,7 @@ int process(const Config& config) {
 	size_t iterCount = 0;
 	do {
 		vector<Chromosome> replaceElems;
-		const size_t K = (size_t)(config.population * config.childrenRatio * (1 + generation / config.maxGeneration * 2));
+		const size_t K = (size_t)(population * config.childrenRatio);
 		replaceElems.reserve(K);
 		for (size_t i = 0; i < K; i++) {
 			auto selectedPair = geneticSpace.select(*config.selectOption);
@@ -153,20 +157,31 @@ int process(const Config& config) {
 		geneticSpace.replace(replaceElems, generation, config.maxGeneration, config.replaceOption);
 		geneticSpace.alignPopulations();
 		if (debugGeneration == -1) {
-			cout << " max: " << geneticSpace.chromosomes[0]->fitness << " " << geneticSpace.chromosomes[1]->fitness << " mean: " << geneticSpace.getAvg() << endl;
+			cout << " result max: " << geneticSpace.optimizer->getMaxFitness()
+			<< " " << geneticSpace.chromosomes[0]->fitness 
+			<< " " << geneticSpace.chromosomes[1]->fitness 
+			<< " mean: " << geneticSpace.getAvg() << endl;
 		//	ofile << iterCount 
 		//		<< "," << geneticSpace.chromosomes[0]->fitness
 		//		<< "," << geneticSpace.chromosomes[config.population - 1]->fitness
 		//		<< "," << geneticSpace.getAvg() << endl;
 		}
 		iterCount++;
-		if (Utils::isReInitCondition(geneticSpace.chromosomes)) {
-			geneticSpace.reInitChromosomes();
+		if (geneticSpace.optimizer->isReInitCondition()) {
+			geneticSpace.reInitChromosomes((float)generation / config.maxGeneration);
 		}
+		/*
+		for (size_t i = 0; i < geneticSpace.chromosomes.size(); i++) {
+			cout << geneticSpace.chromosomes[i]->fitness << " ";
+		} 
+		cout << endl;
+		*/
 	} while (!Utils::isStopCondition(generation, config.maxGeneration));
 	cout << "iter Count : " << iterCount << endl;
+	ofile << "file Path: " << config.inputFilePath << endl;
+	ofile << "final max : " << geneticSpace.optimizer->getMaxFitness() << endl;
 	//ofile << config << endl << "max fitness : " << geneticSpace.chromosomes[0]->fitness << endl << endl;
-	ofile << *(geneticSpace.chromosomes[0]);
+	//ofile << *(geneticSpace.chromosomes[0]);
 	return geneticSpace.chromosomes[0]->fitness;
 
 }

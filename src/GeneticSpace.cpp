@@ -5,45 +5,29 @@
 #include <cmath>
 using namespace std;
 
-//bool WeightPairComparator(const WeightPair& a, const WeightPair& b) {
-//	return a->second > b->second;
-//};
-
-bool weightComparator(int i, int j) {
-	return i < j;
-}
-
 bool fitnessComparator(shared_ptr<Chromosome>& a, shared_ptr<Chromosome>& b) {
 	return a->fitness > b->fitness;
 }
 
-GeneticSpace::GeneticSpace(size_t _population, Graph* graph) : population(_population), graph(graph) {
-	int vCount = graph->getVCount();
+GeneticSpace::GeneticSpace(size_t _population, Graph* graph) : population(_population), graph(graph){
+	setGeneRatio();
+	size_t vCount = graph->getVCount();
 	for (size_t i = 0; i < population; i++) {
-		pChromosome elem = make_shared<Chromosome>(Chromosome());
-		for (int j = 0; j < vCount; j++) {
-			int value = rand() % 2;
-			elem->genes.emplace_back(value);
-		}
+		pChromosome elem = make_shared<Chromosome>(Chromosome(vCount, true, geneRatio));
 		chromosomes.emplace_back(elem);
 	}
-
+	initFitnesses();
+	optimizer = new Optimizer(vCount, chromosomes);
 }
 
-void GeneticSpace::reInitChromosomes() {
-	int vCount = graph->getVCount();
-	pChromosome bestElem = chromosomes[0];
-	chromosomes.clear();
-	chromosomes.reserve(population);
-	chromosomes.emplace_back(bestElem);
-	for (size_t i = 1; i < population; i++) {
-		pChromosome elem = make_shared<Chromosome>(Chromosome());
-		for (int j = 0; j < vCount; j++) {
-			int value = rand() % 2;
-			elem->genes.emplace_back(value);
-		}
-		chromosomes.emplace_back(elem);
-	}
+void GeneticSpace::setGeneRatio() {
+	float min = 0.3;
+	geneRatio = min + Utils::getRandZeroToOne() * 0.4;
+}
+
+void GeneticSpace::reInitChromosomes(float generationRatio) {
+	setGeneRatio();
+	optimizer->reInit(generationRatio, geneRatio);
 	initFitnesses();
 }
 
@@ -139,7 +123,7 @@ pair<shared_ptr<Chromosome>, shared_ptr<Chromosome>> GeneticSpace::selectByTourn
 
 	while (candSize > 2) {
 		for (size_t i = 0; i < candSize / 2; i++) {
-			float randValue = (float)(rand() % RAND_MAX);
+			float randValue = Utils::getRandZeroToOne();
 			pChromosome first = candidates[i * 2];
 			pChromosome second = candidates[i * 2 + 1];
 			
@@ -163,7 +147,8 @@ pair<pChromosome, pChromosome> GeneticSpace::selectByRandom() {
 }
 
 Chromosome GeneticSpace::crossover(shared_ptr<Chromosome> first, shared_ptr<Chromosome> second, CrossoverOption option) {
-	return crossoverByPoint(first, second, option.pointCount);
+	return uniformCrossover(first, second);
+	//return crossoverByPoint(first, second, option.pointCount);
 }
 
 Chromosome GeneticSpace::crossoverByPoint(shared_ptr<Chromosome> first, shared_ptr<Chromosome> second, const size_t pointNum) {
@@ -174,7 +159,7 @@ Chromosome GeneticSpace::crossoverByPoint(shared_ptr<Chromosome> first, shared_p
 		cutPoints.emplace_back(cutPoint);
 	}
 	sort(cutPoints.begin(), cutPoints.end());
-	Chromosome crossovered((size_t)vCount);
+	Chromosome crossovered(vCount);
 	size_t cutIndex = 0;
 	bool isFirst = true;
 	for (size_t i = 0; i < vCount; i++) {
@@ -184,14 +169,15 @@ Chromosome GeneticSpace::crossoverByPoint(shared_ptr<Chromosome> first, shared_p
 			isFirst = !isFirst;
 		}
 	}
-	//int currFitness = 0;
-	//for (Edge& edge : graph->eArray) {
-	//	if (crossovered.genes[get<0>(edge)] != crossovered.genes[get<1>(edge)]) {
-	//		currFitness += get<2>(edge);
-	//	}
-	//}
-	//graph->x++;
-	//crossovered.fitness = currFitness;
+	return crossovered;
+}
+
+Chromosome GeneticSpace::uniformCrossover(pChromosome first, pChromosome second) {
+	size_t vCount = graph->getVCount();
+	Chromosome crossovered((size_t)vCount);
+	for (size_t i = 0; i < vCount; i++) {
+		crossovered.genes.emplace_back((Utils::getRandZeroToOne() > 0.6 ? first : second)->genes[i]);
+	}
 	return crossovered;
 }
 
@@ -223,4 +209,8 @@ void GeneticSpace::replace(vector<Chromosome>& newChromosomes,
 			replaceIndices.emplace_back(--replaceIndex);
 		}
 	}
+}
+
+GeneticSpace::~GeneticSpace() {
+	delete optimizer;
 }
