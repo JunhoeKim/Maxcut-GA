@@ -15,7 +15,7 @@ void Optimizer::reInit(float generationRatio, float geneRatio) {
     restartStack = 0;
   }
 
-	size_t resetCond = isFindBest ? 10 * (1 + generationRatio * 2) : 4 * (1 + generationRatio * 2);
+	size_t resetCond = isFindBest ? 7 * (1 + generationRatio * 4) : 3 * (1 + generationRatio * 4);
 	if (maxChromosome->fitness < currMaxChromosome->fitness) {
 		maxChromosome = currMaxChromosome;
 		isFindBest = true;
@@ -47,13 +47,11 @@ bool Optimizer::isReInitCondition() {
   if (maxChromosome->fitness < fitness) {
     maxChromosome = chromosomes[0];
   }
-
-	for (size_t i = 0; i < chromosomes.size() / 3; i++) {
-		if (fitness != chromosomes[i]->fitness) {
-      isSatisfied = false;
-      break;
-		}
-	}
+	
+  int convergeFitness = chromosomes[(size_t)(chromosomes.size() * 0.7)]->fitness;
+  if (fitness != convergeFitness) {
+	isSatisfied = false;
+  }
 
   if (isSatisfied) {
     cout << "origin condition !" << endl;
@@ -68,7 +66,7 @@ bool Optimizer::isReInitCondition() {
     tempSecondFit = chromosomes[1]->fitness;
   }
 
-  if (iterStack > 600) {
+  if (iterStack > 500) {
     isSatisfied = true;
     cout << "hello new condition!!" << endl;
   }

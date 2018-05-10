@@ -7,7 +7,7 @@ Chromosome::Chromosome(size_t vCount) {
 	genes.reserve(vCount);
 }
 
-Chromosome::Chromosome(size_t vCount, bool doNormal, float geneRatio) {
+Chromosome::Chromosome(size_t vCount, bool doNormal, float geneRatio) : isNormal(doNormal) {
 	genes.reserve(vCount);
 	for (size_t i = 0; i < vCount; i++) {
 		int value = Utils::getRandZeroToOne() > geneRatio ? 0 : 1;
@@ -33,6 +33,13 @@ void Chromosome::mutate(MutateOption* option, Graph* graph) {
 		mutateByTypical(graph);
 		break;
 	}
+
+	if (isNormal && genes[0] == 1) {
+		for (size_t i = 0; i < graph->getVCount(); i++) {
+			genes[i] = 1 - genes[i];
+		}
+	}
+
 	int currFitness = 0;
 	for (Edge& edge : graph->eArray) {
 		if (genes[get<0>(edge)] != genes[get<1>(edge)]) {
@@ -44,14 +51,23 @@ void Chromosome::mutate(MutateOption* option, Graph* graph) {
 }
 
 void Chromosome::searchToLocal(Graph* graph) {
+
 	size_t vCount = graph->getVCount();
+	vector<int> indexVector;
+	indexVector.reserve(vCount);
+	for (size_t i = 0; i < vCount; i++) {
+		indexVector.emplace_back(i);
+	}
+	random_shuffle(indexVector.begin(), indexVector.end());
+
 	bool improved = true;
 	while (improved) {
 		improved = false;
 		for (size_t i = 0; i < vCount; i++) {
-			int fitnessDelta = getFitnessDelta(graph, i);
+			size_t currIndex = indexVector[i];
+			int fitnessDelta = getFitnessDelta(graph, currIndex);
 			if (fitnessDelta > 0) {
-				genes[i] = 1 - genes[i];
+				genes[currIndex] = 1 - genes[currIndex];
 				fitness += fitnessDelta;
 				improved = true;
 			}
@@ -82,6 +98,7 @@ void Chromosome::mutateBySwap(Graph* graph) {
 	second.reserve(swapSize);
 	size_t firstIndex = rand();
 	size_t secondIndex = rand();
+
 	for (size_t i = 0; i < swapSize; i++) {
 		first.emplace_back(genes[(firstIndex + i) % vCount]);
 		second.emplace_back(genes[(secondIndex + i) % vCount]);

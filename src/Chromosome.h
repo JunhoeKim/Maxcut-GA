@@ -27,5 +27,6 @@ private:
 	void mutateBySwap(Graph*);
 	void mutateByTypical(Graph*);
 	int getFitnessDelta(Graph*, size_t index);
+	bool isNormal = false;
 };
 #endif
