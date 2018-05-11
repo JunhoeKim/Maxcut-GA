@@ -2,11 +2,11 @@
 Highcharts.chart('container', {
 
     title: {
-      text: 'Population Analysis by Generation'
+      text: 'Maximum Fitness of each reset stage'
     },
   
     subtitle: {
-      text: 'Instance: weighted_500.txt'
+      text: 'Instance: cubic_1000.txt'
     },
   
     yAxis: {
@@ -28,9 +28,7 @@ Highcharts.chart('container', {
     },
     data: {
         csv: document.getElementById('csv').innerHTML,
-        csvURL: './max_mean.csv',
-        enablePolling: true,
-        dataRefreshRate: 1
+        csvURL: './max_mean.csv'
     },
 
     plotOptions: {

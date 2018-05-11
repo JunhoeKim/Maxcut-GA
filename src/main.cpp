@@ -40,13 +40,17 @@ int main() {
 	config.population = 300;
 	config.inputFilePath = "../proj2_instances/cubic_1000.txt";
 	config.childrenRatio = 0.07f;
-	//process(config, "cubic_");
-	for (size_t i = 1; i < paths.size(); i++) {
-		config.inputFilePath = "../proj2_instances/" + paths[i];
-		for (size_t j = 0; j < 10; j++) {
-			process(config, names[i]);
+	process(config, "cubic_");
+	/*
+	for (size_t k = 0; k < 3; k++) {
+		for (size_t i = 0; i < paths.size(); i++) {
+			config.inputFilePath = "../proj2_instances/" + paths[i];
+			for (size_t j = 0; j < 1; j++) {
+				process(config, names[i]);
+			}
 		}
 	}
+	*/
 
 	//ofstream ofile("result.csv", fstream::out | fstream::app);
 	//ofile << "Instance,Maximum,Average,Standard Deviation" << endl;
@@ -98,7 +102,8 @@ int process(const Config& config, string name) {
 	int first = 0, second = 0, weight = 0;
 
 	ifstream ifile(config.inputFilePath, ifstream::in);
-	ofstream ofile("./results/" + name + "result.csv", fstream::out | fstream::app);
+	//ofstream ofile("./results/" + name + "result_by_generation.csv", fstream::out | fstream::app);
+	ofstream ofile("./results/total_result.csv", fstream::out | fstream::app);
 	ifile >> vCount >> eCount;
 	Graph graph(vCount, eCount);
 	size_t population = 1000000 / eCount;
@@ -112,8 +117,9 @@ int process(const Config& config, string name) {
 	auto debugStart = clock();
 	int debugGeneration = 0;
 	cout << " max: " << geneticSpace.chromosomes[0]->fitness << " mean: " << geneticSpace.getAvg() << endl;
-	//ofile << "Generation,Maximum Fitness,Minimum Fitness,Average" << endl;
-	//ofile << "0," << geneticSpace.chromosomes[0]->fitness 
+	//ofile << "Generation,Global Maximum Fitness,Local Maximum Fitness,Local Minimum Fitness,Average" << endl;
+	//ofile << "0," << geneticSpace.chromosomes[0]->fitness
+	//	<< "," << geneticSpace.chromosomes[0]->fitness
 	//	<< "," << geneticSpace.chromosomes[config.population -1]->fitness
 	//	<< "," << geneticSpace.getAvg() << endl;
 	size_t iterCount = 0;
@@ -138,17 +144,18 @@ int process(const Config& config, string name) {
 		geneticSpace.replace(replaceElems, generation, config.maxGeneration, config.replaceOption);
 		geneticSpace.alignPopulations();
 		if (debugGeneration == -1) {
-			cout << " result max: " << geneticSpace.optimizer->getMaxFitness()
-				<< " " << geneticSpace.chromosomes[0]->fitness
-				<< " " << geneticSpace.chromosomes[1]->fitness
-				<< " mean: " << geneticSpace.getAvg() << endl;
-			//	ofile << iterCount 
-			//		<< "," << geneticSpace.chromosomes[0]->fitness
-			//		<< "," << geneticSpace.chromosomes[config.population - 1]->fitness
-			//		<< "," << geneticSpace.getAvg() << endl;
+			//cout << " result max: " << geneticSpace.optimizer->getMaxFitness()
+			//	<< " " << geneticSpace.chromosomes[0]->fitness
+			//	<< " " << geneticSpace.chromosomes[1]->fitness
+			//	<< " mean: " << geneticSpace.getAvg() << endl;
+			//ofile << iterCount
+			//	<< "," << geneticSpace.optimizer->getMaxFitness()
+			//	<< "," << geneticSpace.chromosomes[0]->fitness
+			//	<< "," << geneticSpace.chromosomes[config.population - 1]->fitness
+			//	<< "," << geneticSpace.getAvg() << endl;
 		}
 		iterCount++;
-		if (geneticSpace.optimizer->isReInitCondition()) {
+		if (geneticSpace.optimizer->isReInitCondition(iterCount)) {
 			geneticSpace.reInitChromosomes((float)generation / config.maxGeneration);
 		}
 		/*
@@ -158,41 +165,50 @@ int process(const Config& config, string name) {
 		cout << endl;
 		*/
 	} while (!Utils::isStopCondition(generation, config.maxGeneration));
-	//cout << "iter Count : " << iterCount << endl;
-	//ofile << "file Path: " << config.inputFilePath << endl;
-	//ofile << "final max : " << geneticSpace.optimizer->getMaxFitness() << endl;
+	ofstream olocalMaxFile("./results/" + name + "result_max.csv", fstream::out | fstream::app);
+	vector<pair<size_t, int>> localMaxFitnesses = geneticSpace.optimizer->tempMaxFitnesses;
+	cout << localMaxFitnesses.size() << endl;
+	olocalMaxFile << "Generation,Fitness,Average" << endl;
+	for (size_t i = 0; i < localMaxFitnesses.size(); i++) { 
+		cout << localMaxFitnesses[i].first << "," << localMaxFitnesses[i].second << endl;
+		olocalMaxFile << localMaxFitnesses[i].first << "," << localMaxFitnesses[i].second
+			<< "," << geneticSpace.optimizer->tempAverages[i] << endl;
+	}
+	ofile << "file Path: " << config.inputFilePath << endl;
+	ofile << "iter Count : " << iterCount << endl;
+	ofile << "final max : " << geneticSpace.optimizer->getMaxFitness() << endl;
 	//ofile << config << endl << "max fitness : " << geneticSpace.chromosomes[0]->fitness << endl << endl;
-	ofile << geneticSpace.optimizer->getMaxFitness()
-		<< "," << geneticSpace.chromosomes[population - 1]->fitness
-		<< "," << geneticSpace.getAvg() << endl;
+	//ofile << geneticSpace.optimizer->getMaxFitness();
+	//	<< "," << geneticSpace.chromosomes[population - 1]->fitness
+	//	<< "," << geneticSpace.getAvg() << endl;
 	//ofile << *(geneticSpace.chromosomes[0]);
 
 	
-	ofstream olocalFile("./results/" + name + "result_local.csv", fstream::out | fstream::app);
-	size_t multiStartPopulation = (size_t)iterCount * population * config.childrenRatio;
-	vector<int> maxFitnesses;
-	vector<float> avgFitnesses;
-	vector<int> minFitnesses;
-	size_t fitnessesSize = multiStartPopulation / 1000;
-	maxFitnesses.reserve(fitnessesSize);
-	avgFitnesses.reserve(fitnessesSize);
-	minFitnesses.reserve(fitnessesSize);
-	for (size_t i = 0; i < fitnessesSize; i++) {
-		GeneticSpace multiSpace(1000, &graph);
-		for (size_t j = 0; j < 1000; j++) {
-			multiSpace.chromosomes[j]->searchToLocal(&graph);
-		}
-		multiSpace.alignPopulations();
-		maxFitnesses.emplace_back(multiSpace.chromosomes[0]->fitness);
-		minFitnesses.emplace_back(multiSpace.chromosomes[999]->fitness);
-		avgFitnesses.emplace_back(multiSpace.getAvg());
-	}
-	sort(maxFitnesses.begin(), maxFitnesses.end());
-	sort(minFitnesses.begin(), minFitnesses.end());
-	float average = accumulate(avgFitnesses.begin(), avgFitnesses.end(), 0.0) / avgFitnesses.size();
-	olocalFile << maxFitnesses[fitnessesSize - 1]
-		<< "," << minFitnesses[0]
-		<< "," << average << endl;
+	//ofstream olocalFile("./results/" + name + "result_local.csv", fstream::out | fstream::app);
+	//size_t multiStartPopulation = (size_t)iterCount * population * config.childrenRatio;
+	//vector<int> maxFitnesses;
+	//vector<float> avgFitnesses;
+	//vector<int> minFitnesses;
+	//size_t fitnessesSize = multiStartPopulation / 1000;
+	//maxFitnesses.reserve(fitnessesSize);
+	//avgFitnesses.reserve(fitnessesSize);
+	//minFitnesses.reserve(fitnessesSize);
+	//for (size_t i = 0; i < fitnessesSize; i++) {
+	//	GeneticSpace multiSpace(1000, &graph);
+	//	for (size_t j = 0; j < 1000; j++) {
+	//		multiSpace.chromosomes[j]->searchToLocal(&graph);
+	//	}
+	//	multiSpace.alignPopulations();
+	//	maxFitnesses.emplace_back(multiSpace.chromosomes[0]->fitness);
+	//	minFitnesses.emplace_back(multiSpace.chromosomes[999]->fitness);
+	//	avgFitnesses.emplace_back(multiSpace.getAvg());
+	//}
+	//sort(maxFitnesses.begin(), maxFitnesses.end());
+	//sort(minFitnesses.begin(), minFitnesses.end());
+	//float average = accumulate(avgFitnesses.begin(), avgFitnesses.end(), 0.0) / avgFitnesses.size();
+	//olocalFile << maxFitnesses[fitnessesSize - 1]
+	//	<< "," << minFitnesses[0]
+	//	<< "," << average << endl;
 
 	return 0;
 }

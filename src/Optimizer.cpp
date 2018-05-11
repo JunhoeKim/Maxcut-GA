@@ -39,7 +39,7 @@ void Optimizer::reInit(float generationRatio, float geneRatio) {
 
 }
 
-bool Optimizer::isReInitCondition() {
+bool Optimizer::isReInitCondition(size_t iterCount) {
 
   bool isSatisfied = true;
   int fitness = chromosomes[0]->fitness;
@@ -55,6 +55,13 @@ bool Optimizer::isReInitCondition() {
 
   if (isSatisfied) {
     cout << "origin condition !" << endl;
+	float result = 0;
+	for (auto chromosome : chromosomes) {
+		result += chromosome->fitness;
+	}
+
+	tempMaxFitnesses.emplace_back(make_pair(iterCount, fitness));
+	tempAverages.emplace_back(result / chromosomes.size());
   }
 
   if (tempMaxFit == chromosomes[0]->fitness
@@ -66,8 +73,14 @@ bool Optimizer::isReInitCondition() {
     tempSecondFit = chromosomes[1]->fitness;
   }
 
-  if (iterStack > 500) {
+  if (iterStack > 200) {
     isSatisfied = true;
+	tempMaxFitnesses.emplace_back(make_pair(iterCount, fitness));
+	float result = 0;
+	for (auto chromosome : chromosomes) {
+		result += chromosome->fitness;
+	}
+	tempAverages.emplace_back(result / chromosomes.size());
     cout << "hello new condition!!" << endl;
   }
 

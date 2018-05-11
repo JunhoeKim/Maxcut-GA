@@ -13,7 +13,9 @@ class Optimizer {
     Optimizer(size_t vCount, vector<pChromosome>& chromosomes);
     void reInit(float generationRatio, float geneRatio);
     int getMaxFitness();
-    bool isReInitCondition();
+    bool isReInitCondition(size_t iterCount);
+	vector<pair<size_t, int>> tempMaxFitnesses;
+	vector<float> tempAverages;
   private:
     size_t vCount;
     vector<pChromosome>& chromosomes;
