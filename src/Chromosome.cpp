@@ -5,13 +5,21 @@ Chromosome::Chromosome() {
 
 Chromosome::Chromosome(size_t vCount) {
 	genes.reserve(vCount);
+	gains.reserve(vCount);
+	for (size_t i = 0; i < vCount; i++) {
+		gains.emplace_back(0);
+	}
 }
 
 Chromosome::Chromosome(size_t vCount, bool doNormal, float geneRatio) : isNormal(doNormal) {
+
 	genes.reserve(vCount);
+	gains.reserve(vCount);
+
 	for (size_t i = 0; i < vCount; i++) {
 		int value = Utils::getRandZeroToOne() > geneRatio ? 0 : 1;
 		genes.emplace_back(value);
+		gains.emplace_back(0);
 	}
 
 	if (doNormal && genes[0] == 1) {
@@ -21,7 +29,7 @@ Chromosome::Chromosome(size_t vCount, bool doNormal, float geneRatio) : isNormal
 	}
 }
 
-void Chromosome::mutate(MutateOption* option, Graph* graph) {
+void Chromosome::mutate(MutateOption* option, Graph* graph, float generationRatio) {
 	switch (option->mutateType) {
 	case Uniform:
 		mutateByUniform(option);
@@ -30,7 +38,7 @@ void Chromosome::mutate(MutateOption* option, Graph* graph) {
 		mutateBySwap(graph);
 		break;
 	case Typical:
-		mutateByTypical(graph);
+		mutateByTypical(graph, generationRatio);
 		break;
 	}
 
@@ -60,22 +68,65 @@ void Chromosome::searchToLocal(Graph* graph) {
 	}
 	random_shuffle(indexVector.begin(), indexVector.end());
 
+	for (size_t i = 0; i < vCount; i++) {
+		gains[i] = getGain(graph, i);
+	}
+
 	bool improved = true;
 	while (improved) {
-		improved = false;
-		for (size_t i = 0; i < vCount; i++) {
-			size_t currIndex = indexVector[i];
-			int fitnessDelta = getFitnessDelta(graph, currIndex);
-			if (fitnessDelta > 0) {
-				genes[currIndex] = 1 - genes[currIndex];
-				fitness += fitnessDelta;
-				improved = true;
+		while (improved) {
+			improved = false;
+			for (size_t i = 0; i < vCount; i++) {
+				size_t currIndex = indexVector[i];
+				if (gains[currIndex] > 0) {
+					fitness += gains[currIndex];
+					genes[currIndex] = 1 - genes[currIndex];
+					gains[currIndex] = -gains[currIndex];
+
+					for (auto pair : graph->adjacentLists[currIndex]) {
+						gains[pair.first] = (genes[currIndex] == genes[pair.first]) ?
+							(gains[pair.first] + 2 * pair.second) : (gains[pair.first] - 2 * pair.second);
+					}
+					improved = true;
+				}
+			}
+		}
+
+		improved = true;
+		while (improved) {
+			improved = false;
+			for (size_t i = 0; i < vCount; i++) {
+				size_t currIndex = indexVector[i];
+				for (auto pair : graph->adjacentLists[currIndex]) {
+
+					int sign = genes[currIndex] == genes[pair.first] ? 1 : -1;
+					int delta = gains[currIndex] + gains[pair.first] - 2 * sign * pair.second;
+
+					if (delta > 0) {
+						improved = true;
+						fitness += delta;
+
+						genes[currIndex] = 1 - genes[currIndex];
+						gains[currIndex] = - gains[currIndex];
+						for (auto innerPair : graph->adjacentLists[currIndex]) {
+							gains[innerPair.first] = (genes[currIndex] == genes[innerPair.first]) ?
+								(gains[innerPair.first] + 2 * innerPair.second) : (gains[innerPair.first] - 2 * innerPair.second);
+						}
+
+						genes[pair.first] = 1 - genes[pair.first];
+						gains[pair.first] = -gains[pair.first];
+						for (auto innerPair : graph->adjacentLists[pair.first]) {
+							gains[innerPair.first] = (genes[pair.first] == genes[innerPair.first]) ?
+								(gains[innerPair.first] + 2 * innerPair.second) : (gains[innerPair.first] - 2 * innerPair.second);
+						}
+					}
+				}
 			}
 		}
 	}
 }
 
-int Chromosome::getFitnessDelta(Graph* graph, size_t index) {
+int Chromosome::getGain(Graph* graph, size_t index) {
 	vector<pair<INDEX, WEIGHT>> adjacentList = graph->adjacentLists[index];
 	int fitnessDelta = 0;
 	int currValue = genes[index];
@@ -132,13 +183,12 @@ void Chromosome::mutateByUniform(MutateOption* option) {
 	}
 }
 
-void Chromosome::mutateByTypical(Graph* graph) {
-	size_t mutateCount = graph->getVCount() * 0.04f;
+void Chromosome::mutateByTypical(Graph* graph, float generationRatio) {
+	size_t vCount = graph->getVCount();
+	size_t mutateCount = max((size_t)5, (size_t)(rand() % (size_t)(vCount * 0.03 + 1)));
 	for (size_t i = 0; i < mutateCount; i++) {
-		if (rand() / RAND_MAX > 0.7f) {
-			size_t currIndex = rand() % mutateCount;
-			genes[currIndex] = genes[currIndex] == 1 ? 0 : 1;
-		}
+		size_t currIndex = rand() % vCount;
+		genes[currIndex] = genes[currIndex] == 1 ? 0 : 1;
 	}
 }
 

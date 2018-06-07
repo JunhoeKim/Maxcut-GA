@@ -13,7 +13,7 @@ GeneticSpace::GeneticSpace(size_t _population, Graph* graph) : population(_popul
 	setGeneRatio();
 	size_t vCount = graph->getVCount();
 	for (size_t i = 0; i < population; i++) {
-		pChromosome elem = make_shared<Chromosome>(Chromosome(vCount, true, geneRatio));
+		pChromosome elem = make_shared<Chromosome>(Chromosome(vCount, false, geneRatio));
 		chromosomes.emplace_back(elem);
 	}
 	initFitnesses();

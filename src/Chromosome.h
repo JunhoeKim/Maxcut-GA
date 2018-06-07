@@ -16,7 +16,8 @@ public:
 	Chromosome(size_t vCount);
 	Chromosome(size_t vCount, bool doNormal, float geneRatio);
 	vector<int> genes;
-	void mutate(MutateOption* option, Graph* graph);
+	vector<int> gains;
+	void mutate(MutateOption* option, Graph* graph, float generationRatio);
 	void searchToLocal(Graph*);
 	int fitness = 0;
 	friend ostream& operator<<(std::ostream& os, const Chromosome& obj);
@@ -25,8 +26,8 @@ public:
 private:
 	void mutateByUniform(MutateOption*);
 	void mutateBySwap(Graph*);
-	void mutateByTypical(Graph*);
-	int getFitnessDelta(Graph*, size_t index);
+	void mutateByTypical(Graph*, float);
+	int getGain(Graph*, size_t index);
 	bool isNormal = false;
 };
 #endif
