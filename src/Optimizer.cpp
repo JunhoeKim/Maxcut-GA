@@ -50,7 +50,6 @@ void Optimizer::reInit(float generationRatio, float geneRatio) {
 	chromosomes.reserve(population);
 	size_t startIndex = 1;
 
-
 	chromosomes.emplace_back(maxChromosome);
 
 	for (size_t i = startIndex; i < population; i++) {
@@ -60,13 +59,15 @@ void Optimizer::reInit(float generationRatio, float geneRatio) {
 }
 
 bool Optimizer::isReInitCondition(size_t iterCount, size_t generation) {
+
 	vector<size_t> resetTimes = { 20, 60, 130, 230, 360 };
+
 	if (maxChromosome->fitness < chromosomes[0]->fitness) {
 		maxChromosome = chromosomes[0];
 	}
 	int convergeFitness = chromosomes[(size_t)(chromosomes.size() * 0.7)]->fitness;
 	for (size_t i = 0; i < resetTimes.size(); i++) {
-		if (restartStack <= i && generation >= resetTimes[i] && chromosomes[0]->fitness == convergeFitness) {
+		if (restartStack <= i && generation >= resetTimes[i] && (chromosomes[0]->fitness == convergeFitness || chromosomes[1]->fitness == convergeFitness)) {
 			restartStack++;
 			return true;
 		}

@@ -9,7 +9,7 @@ using pChromosome = shared_ptr<Chromosome>;
 class Utils {
   public:
   static bool isStopCondition(size_t generation, size_t maxGeneration);
-	static int selectIndex(float*, float);
+  static int selectIndex(float*, float);
   static float getRandZeroToOne();
 };
 #endif

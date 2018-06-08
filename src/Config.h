@@ -8,7 +8,7 @@ enum SelectType {
 	Rank, Tournament, SelectRandom
 };
 enum ReplaceType {
-	Genitor, ReplaceRandom
+	Genitor, ReplaceRandom, PreSelection
 };
 
 enum MutateType {

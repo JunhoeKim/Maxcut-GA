@@ -11,6 +11,7 @@
 using namespace std;
 
 class Chromosome {
+
 public:
 	Chromosome();
 	Chromosome(size_t vCount);
@@ -21,7 +22,7 @@ public:
 	void searchToLocal(Graph*);
 	int fitness = 0;
 	friend ostream& operator<<(std::ostream& os, const Chromosome& obj);
-
+	pair<shared_ptr<Chromosome>, shared_ptr<Chromosome>> parentIndexPair;
 
 private:
 	void mutateByUniform(MutateOption*);
@@ -30,4 +31,5 @@ private:
 	int getGain(Graph*, size_t index);
 	bool isNormal = false;
 };
+
 #endif

@@ -127,10 +127,10 @@ void Chromosome::searchToLocal(Graph* graph) {
 }
 
 int Chromosome::getGain(Graph* graph, size_t index) {
-	vector<pair<INDEX, WEIGHT>> adjacentList = graph->adjacentLists[index];
+	//vector<pair<INDEX, WEIGHT>> adjacentList = graph->adjacentLists[index];
 	int fitnessDelta = 0;
 	int currValue = genes[index];
-	for (auto pair: adjacentList) {
+	for (auto pair: graph->adjacentLists[index]) {
 		if (currValue == genes[pair.first]) {
 			fitnessDelta += pair.second;
 		} else {

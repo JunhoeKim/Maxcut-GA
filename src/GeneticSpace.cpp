@@ -5,6 +5,11 @@
 #include <cmath>
 using namespace std;
 
+float GeneticSpace::getRandZeroToOne() {
+	double randValue = ((double)rand()) / RAND_MAX;
+	return (float)randValue;
+}
+
 bool fitnessComparator(shared_ptr<Chromosome>& a, shared_ptr<Chromosome>& b) {
 	return a->fitness > b->fitness;
 }
@@ -22,7 +27,7 @@ GeneticSpace::GeneticSpace(size_t _population, Graph* graph) : population(_popul
 
 void GeneticSpace::setGeneRatio() {
 	float min = 0.3;
-	geneRatio = min + Utils::getRandZeroToOne() * 0.4;
+	geneRatio = min + GeneticSpace::getRandZeroToOne() * 0.4;
 }
 
 void GeneticSpace::reInitChromosomes(float generationRatio) {
@@ -123,7 +128,7 @@ pair<shared_ptr<Chromosome>, shared_ptr<Chromosome>> GeneticSpace::selectByTourn
 
 	while (candSize > 2) {
 		for (size_t i = 0; i < candSize / 2; i++) {
-			float randValue = Utils::getRandZeroToOne();
+			float randValue = GeneticSpace::getRandZeroToOne();
 			pChromosome first = candidates[i * 2];
 			pChromosome second = candidates[i * 2 + 1];
 			
@@ -176,8 +181,9 @@ Chromosome GeneticSpace::uniformCrossover(pChromosome first, pChromosome second)
 	size_t vCount = graph->getVCount();
 	Chromosome crossovered((size_t)vCount);
 	for (size_t i = 0; i < vCount; i++) {
-		crossovered.genes.emplace_back((Utils::getRandZeroToOne() > 0.6 ? first : second)->genes[i]);
+		crossovered.genes.emplace_back((GeneticSpace::getRandZeroToOne() > 0.6 ? first : second)->genes[i]);
 	}
+	crossovered.parentIndexPair = make_pair(first, second);
 	return crossovered;
 }
 
@@ -193,20 +199,34 @@ void GeneticSpace::replace(vector<Chromosome>& newChromosomes,
 		for (size_t i = 0; i < newChromosomes.size(); i++) {
 			size_t randValue = rand() % randomizeFactor;
 			int replaceIndex = min(population - 1, (size_t)(0.5f * population + progressFactor + randValue));
-			replaceIndices.emplace_back(replaceIndex);
 		}
-		size_t newIndex = 0;
+		size_t newIndex  = 0;
 		for (auto index : replaceIndices) {
 			*chromosomes[index] = newChromosomes[newIndex++];
 		}
 	} else if (replaceOption->replaceType == Genitor) {
-		vector<int> replaceIndices;
 		auto it = chromosomes.cend();
 		size_t replaceIndex = chromosomes.size() - 1;
 		for (size_t i = 0; i < newChromosomes.size(); i++) {
 			--it;
 			**it = newChromosomes[i];
-			replaceIndices.emplace_back(--replaceIndex);
+		}
+	} else if (replaceOption->replaceType == PreSelection) {
+		auto it = chromosomes.cend();
+		size_t replaceIndex = chromosomes.size() - 1;
+		for (size_t i = 0; i < newChromosomes.size(); i++) {
+			Chromosome chromosome = newChromosomes[i];
+			pChromosome first = chromosome.parentIndexPair.first;
+			pChromosome second = chromosome.parentIndexPair.second;
+			
+			if (chromosome.fitness < first->fitness && chromosome.fitness < second->fitness) {
+				--it;
+				**it = newChromosomes[i];
+			}
+			else {
+				pChromosome replacedChromosome = first->fitness < second->fitness ? first : second;
+				*replacedChromosome = chromosome;
+			}
 		}
 	}
 }

@@ -22,15 +22,16 @@ int main() {
 	vector<size_t> pointCounts = { 2, 4, 8 };
 	size_t maxGeneration = 60;
 	vector<size_t> populations = { 300, 700, 1000 };
-	//vector<string> paths = { "chimera_946.txt", "planar_800.txt", "cubic_1000.txt", "random_1000.txt", "toroidal_800.txt", "random_500.txt"};
-	vector<string> paths = { "cubic_2744.txt", "planar_2000.txt", "planar_amplified_3000.txt", "planar_layered_1600.txt", "random_2000.txt", "toroidal_2000.txt",
-		"toroidal_overlapped_3000.txt", "treecone_3000.txt", "treecone_overlapped_3000.txt" };
-	vector<string> names = { "cubic_", "planar_", "planar_amplified_", "planar_layered_", "random_", "toroidal_", "toroidal_overlapped_", "trecone_", "treecone_overlapped_" };
+	vector<string> paths = { "planar_layered_1600.txt", "toroidal_overlapped_3000.txt", "planar_2000.txt" , "cubic_2744.txt", "treecone_3000.txt", "treecone_overlapped_3000.txt" };
+	vector<string> names = { "planar_layered_", "toroidal_overlapped_", "planar_", "cubic_", "treecone_", "treecone_overlapped_" };
+	//vector<string> paths = { "cubic_2744.txt", "planar_2000.txt", "treecone_overlapped_3000.txt", "toroidal_overlapped_3000.txt", "planar_amplified_3000.txt", "planar_layered_1600.txt", "random_2000.txt", "toroidal_2000.txt",
+	//	 "treecone_3000.txt" };
+	//vector<string> names = { "cubic_", "planar_", "treecone_overlapped_", "toroidal_overlapped_", "planar_amplified_", "planar_layered_", "random_", "toroidal_",  "trecone_" };
 	vector<float> childrenRatios = { 0.03f, 0.05f, 0.07f };
 	vector<ReplaceType> replaceTypes = { Genitor, ReplaceRandom };
 	Config config;
 	SelectOption* selectOption = new SelectOption(Tournament, tournamentCounts[0]);
-	ReplaceOption* replaceOption = new ReplaceOption(Genitor);
+	ReplaceOption* replaceOption = new ReplaceOption(PreSelection);
 	MutateOption* mutateOption = new MutateOption(Typical, 0.01f);
 	config.selectOption = selectOption;
 	config.replaceOption = replaceOption;
@@ -39,7 +40,7 @@ int main() {
 	config.selectOption = new SelectOption(Tournament, 2);
 	config.crossoverOption = new CrossoverOption(3);
 	config.maxGeneration = 495;
-	config.population = 1500;
+	config.population = 3000;
 	config.inputFilePath = "../proj2_instances/cubic_1000.txt";
 	config.childrenRatio = 0.07f;
 
@@ -47,12 +48,11 @@ int main() {
 	for (size_t i = 0; i < paths.size(); i++) {
 		for (size_t j = 0; j < 1; j++) {
 			config.inputFilePath = "../proj3_instances/" + paths[i];
-			for (size_t j = 0; j < 3; j++) {
+			for (size_t j = 0; j < 10; j++) {
 				process(ofile, config, names[i]);
 			}
 		}
 	}
-
 
 	//ofstream ofile("result.csv", fstream::out | fstream::app);
 	//ofile << "Instance,Maximum,Average,Standard Deviation" << endl;
@@ -130,6 +130,7 @@ int process(ofstream& ofile, const Config& config, string name) {
 		for (size_t i = 0; i < K; i++) {
 			auto selectedPair = geneticSpace.select(*config.selectOption);
 			auto processed = geneticSpace.crossover(selectedPair.first, selectedPair.second, *config.crossoverOption);
+			//auto processed = *(geneticSpace.chromosomes[rand() % config.population]);
 			processed.mutate(config.mutateOption, &graph, (float)generation / config.maxGeneration);
 			processed.searchToLocal(&graph);
 			replaceElems.emplace_back(processed);

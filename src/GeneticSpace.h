@@ -42,6 +42,7 @@ private:
 	Chromosome crossoverByPoint(pChromosome first, pChromosome second, const size_t pointNum);
 	Chromosome uniformCrossover(pChromosome first, pChromosome second);
 	float geneRatio = 0.5;
+	inline float getRandZeroToOne();
 };
 
 #endif
