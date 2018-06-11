@@ -1,125 +1,80 @@
 #include "Optimizer.hpp"
-Optimizer::Optimizer(size_t vCount, vector<pChromosome>& chromosomes) : vCount(vCount), chromosomes(chromosomes) {
+Optimizer::Optimizer(Graph* graph, size_t vCount, vector<pChromosome>& chromosomes
+	, vector<Chromosome>& tempChromosomes) : vCount(vCount), chromosomes(chromosomes), tempChromosomes(tempChromosomes), graph(graph) {
 
 }
+bool fitnessComparator2(shared_ptr<Chromosome>& a, shared_ptr<Chromosome>& b) {
+	return a->fitness > b->fitness;
+}
 
-void Optimizer::reInit(float generationRatio, float geneRatio) {
-	//pChromosome currMaxChromosome = chromosomes[0];
-	//size_t startIndex = 1;
-	//size_t population = chromosomes.size();
-	//chromosomes.clear();
-	//chromosomes.reserve(population);
-
-
-	//if (maxChromosome->fitness < currMaxChromosome->fitness) {
-	//	maxChromosome = currMaxChromosome;
-	//}
-	//if (currMaxFit < currMaxChromosome->fitness) {
-	//	currMaxFit = currMaxChromosome->fitness;
-	//	restartStack = 0;
-	//}
-
-	//size_t resetCond = isFindBest ? 2 * (1 + generationRatio * 4) : 1 * (1 + generationRatio * 4);
-	//if (maxChromosome->fitness < currMaxChromosome->fitness) {
-	//	maxChromosome = currMaxChromosome;
-	//	isFindBest = true;
-	//	restartStack = 0;
-	//	chromosomes.emplace_back(currMaxChromosome);
-	//}
-	//else if (restartStack > resetCond) {
-	//	isFindBest = false;
-	//	startIndex = 0;
-	//	restartStack = 0;
-	//	currMaxFit = 0;
-	//}
-	//else {
-	//	restartStack++;
-	//	chromosomes.emplace_back(currMaxChromosome);
-	//}
-
-	//for (size_t i = startIndex; i < population; i++) {
-	//	pChromosome elem = make_shared<Chromosome>(Chromosome(vCount, true, geneRatio));
-	//	chromosomes.emplace_back(elem);
-	//}
-	//if (startIndex == 0) {
-	//	cout << maxChromosome->fitness << endl;
-	//}
-	cout << "reset: " << restartStack << endl;
-	size_t population = chromosomes.size();
+void Optimizer::reInit(size_t generation, float geneRatio) {
+	startTime = generation;
+	size_t updatePopulation = 250;
+	size_t population = chromosomes.size() + updatePopulation;
 	chromosomes.clear();
 	chromosomes.reserve(population);
-	size_t startIndex = 1;
+	resetDuration += 10;
 
-	chromosomes.emplace_back(maxChromosome);
 
-	for (size_t i = startIndex; i < population; i++) {
-		pChromosome elem = make_shared<Chromosome>(Chromosome(vCount, false, geneRatio));
+	for (size_t i = 0; i < population; i++) {
+		pChromosome elem = make_shared<Chromosome>(Chromosome(graph, vCount, false, geneRatio));
 		chromosomes.emplace_back(elem);
+	}
+	for (size_t i = 0; i < (size_t)(updatePopulation * 0.07 + 1); i++) {
+		tempChromosomes.emplace_back(Chromosome(graph, vCount, false, geneRatio));
 	}
 }
 
 bool Optimizer::isReInitCondition(size_t iterCount, size_t generation) {
 
-	vector<size_t> resetTimes = { 20, 60, 130, 230, 360 };
-
 	if (maxChromosome->fitness < chromosomes[0]->fitness) {
 		maxChromosome = chromosomes[0];
 	}
-	int convergeFitness = chromosomes[(size_t)(chromosomes.size() * 0.7)]->fitness;
-	for (size_t i = 0; i < resetTimes.size(); i++) {
-		if (restartStack <= i && generation >= resetTimes[i] && (chromosomes[0]->fitness == convergeFitness || chromosomes[1]->fitness == convergeFitness)) {
-			restartStack++;
-			return true;
+
+	int convergeFitness = chromosomes[(size_t)(chromosomes.size() * 0.75)]->fitness;
+	for (size_t i = 0; i < 5; i++) {
+		if (restartStack <= i && chromosomes[2]->fitness == convergeFitness) {
+			if (generation - startTime >= resetDuration) {
+				restartStack++;
+				return true;
+			}
+			else {
+				if (deepFinding(iterCount, generation)) {
+					sort(chromosomes.begin(), chromosomes.end(), fitnessComparator2);
+				}
+			}
 		}
 	}
 	return false;
+}
 
-	//bool isSatisfied = true;
-	//int fitness = chromosomes[0]->fitness;
+bool Optimizer::deepFinding(size_t iteration, size_t generation) {
+	if (generation < 400) {
+		size_t count = 0;
+		bool isFind = false;
+		while (count < 8) {
+			for (size_t i = 1; i < chromosomes.size(); i++) {
+				chromosomes[i]->mutateByDeep();
+				chromosomes[i]->searchToLocal(graph);
+				if (chromosomes[i]->fitness > maxChromosome->fitness) {
+					isFind = true;
+					break;
+				}
+			}
 
-	//if (maxChromosome->fitness < fitness) {
-	//	maxChromosome = chromosomes[0];
-	//}
-
-	//int convergeFitness = chromosomes[(size_t)(chromosomes.size() * 0.7)]->fitness;
-	//if (fitness != convergeFitness) {
-	//	isSatisfied = false;
-	//}
-
-	//if (isSatisfied) {
-	//	float result = 0;
-	//	for (auto chromosome : chromosomes) {
-	//		result += chromosome->fitness;
-	//	}
-
-	//	// For debug
-	//	tempMaxFitnesses.emplace_back(make_pair(iterCount, fitness));
-	//	tempAverages.emplace_back(result / chromosomes.size());
-	//}
-
-	//if (tempMaxFit == chromosomes[0]->fitness
-	//	&& tempSecondFit == chromosomes[1]->fitness) {
-	//	iterStack++;
-	//}
-	//else {
-	//	iterStack = 0;
-	//	tempMaxFit = chromosomes[0]->fitness;
-	//	tempSecondFit = chromosomes[1]->fitness;
-	//}
-
-	//if (iterStack > 200) {
-	//	isSatisfied = true;
-	//	tempMaxFitnesses.emplace_back(make_pair(iterCount, fitness));
-	//	float result = 0;
-	//	for (auto chromosome : chromosomes) {
-	//		result += chromosome->fitness;
-	//	}
-	//	tempAverages.emplace_back(result / chromosomes.size());
-	//}
-
-	//return isSatisfied;
+			if (isFind) {
+				return true;
+			}
+			count++;
+		}
+	}
+	return false;
 }
 
 int Optimizer::getMaxFitness() {
 	return maxChromosome->fitness;
+}
+
+Optimizer::~Optimizer() {
+	maxChromosome = nullptr;
 }

@@ -14,20 +14,25 @@ class Chromosome {
 
 public:
 	Chromosome();
-	Chromosome(size_t vCount);
-	Chromosome(size_t vCount, bool doNormal, float geneRatio);
+	Chromosome(Graph* graph, size_t vCount);
+	Chromosome(Graph* graph, size_t vCount, bool doNormal, float geneRatio);
 	vector<int> genes;
-	vector<int> gains;
-	void mutate(MutateOption* option, Graph* graph, float generationRatio);
+	void mutate(MutateOption* option, Graph* graph, size_t iteration);
 	void searchToLocal(Graph*);
 	int fitness = 0;
 	friend ostream& operator<<(std::ostream& os, const Chromosome& obj);
 	pair<shared_ptr<Chromosome>, shared_ptr<Chromosome>> parentIndexPair;
+	shared_ptr<Chromosome> firstParent;
+	shared_ptr<Chromosome> secondParent;
+	void mutateByDeep();
+	void doSA();
 
 private:
-	void mutateByUniform(MutateOption*);
+	Graph * graph;
+	void calFitness();
+	void mutateByTypical(Graph*, MutateOption*, size_t iteration);
+	void mutateByUniform(MutateOption*, size_t iteration);
 	void mutateBySwap(Graph*);
-	void mutateByTypical(Graph*, float);
 	int getGain(Graph*, size_t index);
 	bool isNormal = false;
 };

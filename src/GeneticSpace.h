@@ -19,18 +19,19 @@ using namespace std;
 using pChromosome = shared_ptr<Chromosome>;
 class GeneticSpace {
 public:
-	GeneticSpace(size_t size, Graph* graph);
+	GeneticSpace(size_t size, Graph* graph, size_t K);
 	~GeneticSpace();
 	void printElems();
 	void alignPopulations();
 	void initFitnesses();
-	void reInitChromosomes(float generationRatio);
+	void reInitChromosomes(size_t generation);
 	void setGeneRatio();
 	float getAvg();
-	Chromosome crossover(shared_ptr<Chromosome> first, shared_ptr<Chromosome> second, CrossoverOption option);
+	void crossover(shared_ptr<Chromosome> first, shared_ptr<Chromosome> second, CrossoverOption option, size_t index);
 	pair<shared_ptr<Chromosome>, shared_ptr<Chromosome>> select(SelectOption option);
-	void replace(vector<Chromosome>& newChromosomes, size_t generation, size_t maxGeneration, ReplaceOption* replaceOption);
+	void replace(size_t generation, size_t maxGeneration, ReplaceOption* replaceOption);
 	vector<pChromosome> chromosomes;
+	vector<Chromosome> tempChromosomes;
 	pair<pChromosome, pair<bool, int>> maxInfo = make_pair(make_shared<Chromosome>(Chromosome()), make_pair(false, 0));
 	Optimizer* optimizer;
 private:
@@ -39,8 +40,8 @@ private:
 	pair<shared_ptr<Chromosome>, shared_ptr<Chromosome>> selectByRank();
 	pair<shared_ptr<Chromosome>, shared_ptr<Chromosome>> selectByTournament(float, int);
 	pair<pChromosome, pChromosome> selectByRandom();
-	Chromosome crossoverByPoint(pChromosome first, pChromosome second, const size_t pointNum);
-	Chromosome uniformCrossover(pChromosome first, pChromosome second);
+	void crossoverByPoint(pChromosome first, pChromosome second, const size_t pointNum);
+	void uniformCrossover(pChromosome first, pChromosome second, size_t index);
 	float geneRatio = 0.5;
 	inline float getRandZeroToOne();
 };

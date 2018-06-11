@@ -3,6 +3,8 @@
 
 #include "GeneticSpace.h"
 #include "Chromosome.h"
+#include <cmath>
+#include <ctime>
 using namespace std;
 using pChromosome = shared_ptr<Chromosome>;
 

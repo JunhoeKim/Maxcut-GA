@@ -11,7 +11,7 @@
 
 using namespace std;
 
-int process(ofstream& ofile, const Config& config, string name);
+int process(ofstream& ofile, const Config& config);
 float avg(vector<int>& fitnesses);
 int max(vector<int>& fitnesses);
 float stdev(vector<int>& fitnesses);
@@ -31,8 +31,8 @@ int main() {
 	vector<ReplaceType> replaceTypes = { Genitor, ReplaceRandom };
 	Config config;
 	SelectOption* selectOption = new SelectOption(Tournament, tournamentCounts[0]);
-	ReplaceOption* replaceOption = new ReplaceOption(PreSelection);
-	MutateOption* mutateOption = new MutateOption(Typical, 0.01f);
+	ReplaceOption* replaceOption = new ReplaceOption(Genitor);
+	MutateOption* mutateOption = new MutateOption(Uniform, 0.02f);
 	config.selectOption = selectOption;
 	config.replaceOption = replaceOption;
 	config.maxGeneration = maxGeneration;
@@ -40,19 +40,19 @@ int main() {
 	config.selectOption = new SelectOption(Tournament, 2);
 	config.crossoverOption = new CrossoverOption(3);
 	config.maxGeneration = 495;
-	config.population = 3000;
-	config.inputFilePath = "../proj2_instances/cubic_1000.txt";
+	config.population = 1000;
+	config.inputFilePath = "./maxcut.in";
 	config.childrenRatio = 0.07f;
 
-	ofstream ofile("./results/total_result.csv", fstream::out);
-	for (size_t i = 0; i < paths.size(); i++) {
-		for (size_t j = 0; j < 1; j++) {
-			config.inputFilePath = "../proj3_instances/" + paths[i];
-			for (size_t j = 0; j < 10; j++) {
-				process(ofile, config, names[i]);
-			}
-		}
-	}
+	ofstream ofile("./maxcut.out", fstream::out);
+	process(ofile, config);
+	//for (size_t i = 0; i < 6; i++) {
+	//	config.inputFilePath = "../proj3_instances/" + paths[i];
+	//	for (size_t j = 0; j < 4; j++) {
+	//		cout << config.inputFilePath << endl;
+	//		process(ofile, config, names[i]);
+	//	}
+	//}
 
 	//ofstream ofile("result.csv", fstream::out | fstream::app);
 	//ofile << "Instance,Maximum,Average,Standard Deviation" << endl;
@@ -97,10 +97,10 @@ int max(vector<int>& fitnesses) {
 	return max;
 }
 
-int process(ofstream& ofile, const Config& config, string name) {
+int process(ofstream& ofile, const Config& config) {
 
 	auto start = clock();
-	int vCount = 0, eCount = 0;
+	size_t vCount = 0, eCount = 0;
 	int first = 0, second = 0, weight = 0;
 
 	ifstream ifile(config.inputFilePath, ifstream::in);
@@ -111,8 +111,8 @@ int process(ofstream& ofile, const Config& config, string name) {
 	while (ifile >> first >> second >> weight) {
 		graph.addEdge(first, second, weight);
 	}
-
-	GeneticSpace geneticSpace(config.population, &graph);
+	const size_t K = (size_t)(config.population * config.childrenRatio);
+	GeneticSpace geneticSpace(config.population, &graph, K);
 	size_t generation = 0;
 	auto debugStart = clock();
 	int debugGeneration = 0;
@@ -122,52 +122,59 @@ int process(ofstream& ofile, const Config& config, string name) {
 	//	<< "," << geneticSpace.chromosomes[0]->fitness
 	//	<< "," << geneticSpace.chromosomes[config.population -1]->fitness
 	//	<< "," << geneticSpace.getAvg() << endl;
+
 	size_t iterCount = 0;
 	do {
-		vector<Chromosome> replaceElems;
-		const size_t K = (size_t)(config.population * config.childrenRatio);
-		replaceElems.reserve(K);
+		const size_t K = (size_t)(geneticSpace.chromosomes.size() * config.childrenRatio);
+
 		for (size_t i = 0; i < K; i++) {
 			auto selectedPair = geneticSpace.select(*config.selectOption);
-			auto processed = geneticSpace.crossover(selectedPair.first, selectedPair.second, *config.crossoverOption);
-			//auto processed = *(geneticSpace.chromosomes[rand() % config.population]);
-			processed.mutate(config.mutateOption, &graph, (float)generation / config.maxGeneration);
-			processed.searchToLocal(&graph);
-			replaceElems.emplace_back(processed);
+			geneticSpace.crossover(selectedPair.first, selectedPair.second, *config.crossoverOption, i);
+			geneticSpace.tempChromosomes[i].mutate(config.mutateOption, &graph, iterCount);
+			geneticSpace.tempChromosomes[i].searchToLocal(&graph);
 		}
+
 		auto end = clock();
 		generation = (end - start) / CLOCKS_PER_SEC;
 		debugGeneration = (end - debugStart) / CLOCKS_PER_SEC;
+
 		if (debugGeneration >= 1) {
 			debugStart = clock();
 			debugGeneration = -1;
 		}
-		geneticSpace.replace(replaceElems, generation, config.maxGeneration, config.replaceOption);
+
+		geneticSpace.replace(generation, config.maxGeneration, config.replaceOption);
 		geneticSpace.alignPopulations();
+
 		if (debugGeneration == -1) {
-			cout << " result max: " << geneticSpace.optimizer->getMaxFitness()
-				<< " " << geneticSpace.chromosomes[0]->fitness
-				<< " " << geneticSpace.chromosomes[1]->fitness
-				<< " " << geneticSpace.chromosomes[2]->fitness
-				<< " mean: " << geneticSpace.getAvg()
-				<< " iter count: " << iterCount << endl;
+			//cout << " max: " << geneticSpace.optimizer->getMaxFitness()
+			//	<< " " << geneticSpace.chromosomes[0]->fitness
+			//	<< " " << geneticSpace.chromosomes[1]->fitness
+			//	<< " " << geneticSpace.chromosomes[2]->fitness
+			//	<< " " << geneticSpace.chromosomes[geneticSpace.chromosomes.size() / 2]->fitness
+			//	<< " mean: " << geneticSpace.getAvg()
+			//	<< " size: " << geneticSpace.chromosomes.size()
+			//	<< " iter count: " << iterCount << endl;
 			//ofile << iterCount
 			//	<< "," << geneticSpace.optimizer->getMaxFitness()
 			//	<< "," << geneticSpace.chromosomes[0]->fitness
 			//	<< "," << geneticSpace.chromosomes[config.population - 1]->fitness
 			//	<< "," << geneticSpace.getAvg() << endl;
 		}
+
 		iterCount++;
+
+		// RE INIT
 		if (geneticSpace.optimizer->isReInitCondition(iterCount, generation)) {
-			geneticSpace.reInitChromosomes((float)generation / config.maxGeneration);
+			geneticSpace.reInitChromosomes(generation);
 		}
-		/*
-		for (size_t i = 0; i < geneticSpace.chromosomes.size(); i++) {
-			cout << geneticSpace.chromosomes[i]->fitness << " ";
-		}
-		cout << endl;
-		*/
+
 	} while (!Utils::isStopCondition(generation, config.maxGeneration));
+	for (size_t i = 0; i < vCount; i++) {
+		if (geneticSpace.optimizer->maxChromosome->genes[i] == 0) {
+			ofile << i + 1 << " ";
+		}
+	}
 	//ofstream olocalMaxFile("./results/" + name + "result_max.csv", fstream::out | fstream::app);
 	//vector<pair<size_t, int>> localMaxFitnesses = geneticSpace.optimizer->tempMaxFitnesses;
 	//cout << localMaxFitnesses.size() << endl;
@@ -177,9 +184,9 @@ int process(ofstream& ofile, const Config& config, string name) {
 	//	olocalMaxFile << localMaxFitnesses[i].first << "," << localMaxFitnesses[i].second
 	//		<< "," << geneticSpace.optimizer->tempAverages[i] << endl;
 	//}
-	ofile << "file Path: " << config.inputFilePath << endl;
+	//ofile << "file Path: " << config.inputFilePath << endl;
 	//ofile << "iter Count : " << iterCount << endl;
-	ofile << "final max : " << geneticSpace.optimizer->getMaxFitness() << endl;
+	//ofile << "final max : " << geneticSpace.optimizer->getMaxFitness() << endl;
 	//ofile << config << endl << "max fitness : " << geneticSpace.chromosomes[0]->fitness << endl << endl;
 	//ofile << geneticSpace.optimizer->getMaxFitness();
 	//	<< "," << geneticSpace.chromosomes[population - 1]->fitness
