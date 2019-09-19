@@ -1,4 +1,3 @@
-# SNU_Proj_GA
+# Maxcut-GA
 
-2018 - 01
-This repo is for Genetic Algorithm (GA)
+This repo implements max-cut algorithm using Genetic Algorithm (GA)
